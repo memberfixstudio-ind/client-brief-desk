@@ -1,0 +1,47 @@
+name: WordPress integration
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - {php: '8.2', wp: '6.8.3'}
+          - {php: '8.3', wp: '7.1.4'}
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: wordpress
+          MYSQL_DATABASE: brief_tests
+        ports: ['3306:3306']
+        options: --health-cmd="mysqladmin ping -pwordpress" --health-interval=10s --health-timeout=5s --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '${{ matrix.php }}'
+          tools: wp-cli
+          extensions: mysqli, mbstring
+      - name: Syntax
+        run: |
+          find . -name '*.php' -print0 | xargs -0 -n1 php -l
+          node --check assets/admin.js
+      - name: Real WordPress tests
+        env:
+          WP_VERSION: '${{ matrix.wp }}'
+        run: |
+          wp core download --version="$WP_VERSION" --path=/tmp/brief-wp
+          cd /tmp/brief-wp
+          wp config create --dbname=brief_tests --dbuser=root --dbpass=wordpress --dbhost=127.0.0.1:3306
+          wp config set MFS_TESTS true --raw
+          wp core install --url=http://localhost --title=Tests --admin_user=admin --admin_password=local-test-only --admin_email=admin@example.test --skip-email
+          mkdir -p wp-content/mu-plugins
+          printf '%s\n' '<?php add_filter("pre_wp_mail", "__return_true");' > wp-content/mu-plugins/no-mail.php
+          ln -s "$GITHUB_WORKSPACE" wp-content/plugins/client-brief-desk
+          wp plugin activate client-brief-desk
+          wp eval-file "$GITHUB_WORKSPACE/tests/integration.php"
+          wp eval-file "$GITHUB_WORKSPACE/tests/privacy-edge.php"
+          bash "$GITHUB_WORKSPACE/tests/concurrency.sh"
