@@ -65,8 +65,9 @@ if ( 'first' === $mode || 'second' === $mode ) {
     $wpdb->query( 'SET SESSION innodb_lock_wait_timeout = 10' );
     $connection = (int) $wpdb->get_var( 'SELECT CONNECTION_ID()' );
     $filter = null;
+    $observer_failure = null;
     if ( 'first' === $mode ) {
-        $filter = function ( $sql ) use ( $wpdb, $write, $read, $fixture, $connection ) {
+        $filter = function ( $sql ) use ( $wpdb, $write, $read, $fixture, $connection, &$observer_failure ) {
             if ( 'COMMIT' !== $sql ) { return $sql; }
             $write( 'locked', array( 'connection' => $connection ) );
             $deadline = microtime( true ) + 8;
@@ -77,14 +78,26 @@ if ( 'first' === $mode || 'second' === $mode ) {
                         "SELECT trx_mysql_thread_id FROM information_schema.INNODB_TRX WHERE trx_mysql_thread_id=%d AND trx_state='LOCK WAIT' AND trx_query=%s",
                         $second['connection'], $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}cbd_briefs WHERE id=%d FOR UPDATE", $fixture['brief_id'] )
                     ) );
-                    if ( $wpdb->last_error ) { throw new RuntimeException( 'Cannot observe INNODB_TRX; use a disposable DB account with PROCESS visibility.' ); }
+                    if ( $wpdb->last_error ) { $observer_failure = array( 'reason' => $wpdb->last_error ); break; }
                     if ( $waiting ) {
                         $write( 'observed', array( 'first' => $connection, 'second' => (int) $waiting ) );
                         return $sql;
                     }
                 }
-                usleep( 50000 );
+                // MySQL caches INNODB_TRX until 100 ms have passed since its last read.
+                usleep( 200000 );
             } while ( microtime( true ) < $deadline );
+            $observer_failure = ( $observer_failure ?? array( 'reason' => 'Timed out observing the second connection in LOCK WAIT.' ) ) + array(
+                'first_connection' => $connection, 'second_connection' => $second['connection'] ?? 0,
+                'transactions' => $wpdb->get_results( $wpdb->prepare(
+                    'SELECT trx_mysql_thread_id,trx_state,trx_query FROM information_schema.INNODB_TRX WHERE trx_mysql_thread_id IN (%d,%d)',
+                    $connection, $second['connection'] ?? 0
+                ), ARRAY_A ),
+                'processes' => $wpdb->get_results( $wpdb->prepare(
+                    'SELECT ID,STATE,INFO FROM information_schema.PROCESSLIST WHERE ID IN (%d,%d)',
+                    $connection, $second['connection'] ?? 0
+                ), ARRAY_A ),
+            );
             throw new RuntimeException( 'Timed out waiting for the second connection to block on this brief.' );
         };
         add_filter( 'query', $filter, PHP_INT_MAX );
@@ -96,6 +109,7 @@ if ( 'first' === $mode || 'second' === $mode ) {
     $request->set_body( wp_json_encode( array( 'version' => $fixture['version'], 'answers' => array( 'q1' => $mode . ' worker answer' ) ) ) );
     try { $response = rest_do_request( $request ); }
     finally { if ( $filter ) { remove_filter( 'query', $filter, PHP_INT_MAX ); } }
+    if ( $observer_failure ) { fwrite( STDERR, 'LOCK OBSERVER FAILURE: ' . wp_json_encode( $observer_failure ) . "\n" ); }
     $write( $mode, array( 'pid' => getmypid(), 'connection' => $connection, 'expected_version' => $fixture['version'], 'status' => $response->get_status() ) );
     echo strtoupper( $mode ) . ': HTTP ' . $response->get_status() . "\n";
     if ( ( 'first' === $mode ? 200 : 409 ) !== $response->get_status() ) { throw new RuntimeException( 'Unexpected save result: ' . wp_json_encode( $response->get_data() ) ); }
