@@ -42,7 +42,7 @@ Use native WordPress authentication, `manage_options` for staff, per-request ass
 
 Before release, verify two-client isolation, revoked access, anonymous access denial, staff-note confidentiality, stale saves, concurrent/repeated submission, obsolete approval rejection, immutable snapshots, required-answer validation, timezone boundaries, exports and keyboard/mobile use. An application-level history is not tamper-proof evidence against a database administrator.
 
-Reuse existing WordPress accounts and core login/password recovery; do not build an account-registration or identity subsystem. No uploads, cloud/SaaS subsystem, paid-service dependency, automatic email, invitations, payment subsystem, legal-signature claims, external integrations or automatic website publishing in v1. Test with synthetic existing accounts on disposable local WordPress, with outbound mail and external HTTP blocked. 
+Reuse existing WordPress accounts and core login/password recovery; do not build an account-registration or identity subsystem. No uploads, cloud/SaaS subsystem, paid-service dependency, automatic email, invitations, payment subsystem, legal-signature claims, external integrations or automatic website publishing in v1. Test with synthetic existing accounts on disposable local WordPress, with outbound mail and external HTTP blocked.
 
 **Portfolio fit.** Separate from Access Ledger's WooCommerce entitlement diagnosis and the rejected lead follow-up concept. Demonstrates client authorization, private data boundaries, state transitions and concurrency protection through one understandable service workflow.
 
