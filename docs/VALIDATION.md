@@ -50,6 +50,8 @@ Install Playwright only in the test environment, or set `CBD_PLAYWRIGHT` to an e
 
 ## Remaining validation
 
-The GitHub Actions matrix is configured for PHP 8.2/WordPress 6.8.3 and PHP 8.3/WordPress 7.1.4 with MySQL 8. Hosted execution was pending at publication; local MariaDB results above are the release evidence. Check [Actions](https://github.com/memberfixstudio-ind/client-brief-desk/actions) for current status.
+The [hosted MySQL 8 run 43467212959](https://github.com/memberfixstudio-ind/client-brief-desk/actions/runs/43467212959) passed for both PHP 8.2/WordPress 6.8.3 and PHP 8.3/WordPress 7.1.4: 65 integration, 29 privacy-edge and 8 concurrency assertions per environment. The release ZIP runtime is byte-for-byte identical to the runtime tested by this passing run.
+
+The initial hosted run exposed a test-harness timing issue: polling `INNODB_TRX` every 50 ms could keep MySQL's cached lock information stale. A forced-delay reproduction on MySQL 8.0.35 failed with the old observer and passed after polling every 200 ms. The test still requires an observed lock wait, one successful save, one 409 conflict and exactly one save event. Only the test observer and its diagnostics changed; no plugin runtime or release asset was replaced.
 
 No external penetration test, screen-reader study, multisite validation, large-data benchmark or long-running customer deployment is claimed. Browser coverage uses Chrome and a standard WordPress theme; third-party themes, caching plugins, proxies and hosting configurations need staging validation. This release does not include uploads, emails, payment processing or legal signatures.
