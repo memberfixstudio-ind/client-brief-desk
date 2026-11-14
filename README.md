@@ -1,5 +1,7 @@
 # Client Brief Desk — WordPress client intake and approvals
 
+[Screenshots and step-by-step setup tutorial](https://memberfix.studio/plugins/client-brief-desk/)
+
 **Get the details right before the work begins.**
 
 A free, open-source WordPress client intake plugin for service businesses. Collect project details in a private client portal, turn a long email into a clear checklist, let clients save their progress, request revisions, and approve the exact answers you reviewed.
