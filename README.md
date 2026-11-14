@@ -1,8 +1,8 @@
-# Client Brief Desk
+# Client Brief Desk — WordPress client intake and approvals
 
 **Get the details right before the work begins.**
 
-A private WordPress workspace for service businesses that collect project details from clients. Turn a long email into a clear checklist, let clients save their progress, request revisions, and approve the exact answers you reviewed.
+A free, open-source WordPress client intake plugin for service businesses. Collect project details in a private client portal, turn a long email into a clear checklist, let clients save their progress, request revisions, and approve the exact answers you reviewed.
 
 ![Client Brief Desk admin workspace](docs/dashboard.png)
 
@@ -54,6 +54,24 @@ No SaaS account, license key, external service, build step or paid dependency is
 - Exclude logged-in portal pages and the plugin's REST routes from shared page/CDN caches. Responses use private/no-store headers, but an overriding proxy configuration must respect them.
 - This release is validated for single-site WordPress. Multisite/network activation has not been validated.
 
+## Common questions
+
+### How do I collect a client brief in WordPress?
+
+Add `[client_brief_desk]` to a page, then create a brief in wp-admin and assign an existing WordPress client account. Start from a service, website or event preset and edit the questions before creating the brief. The client signs in, saves answers as a draft and submits when ready. See [install and use](#install-and-use).
+
+### Can clients see each other's briefs or internal notes?
+
+Clients can access only briefs assigned to their account. Staff notes are excluded from client responses and exports on the server. Administrators with `manage_options` can create and review briefs. Keep signed-in portal pages out of shared caches, as described in [the limits](#deliberate-limits).
+
+### Can I request changes after a client submits their answers?
+
+Yes. Staff can request changes with feedback, which reopens the brief for the client. Submitted answers are otherwise read-only. Approvals refer to a specific submission; reopening an approved brief starts a new review cycle while preserving earlier decisions and snapshots in its history.
+
+### Is this a form builder or a full client CRM?
+
+It is a focused text-brief and approval workflow for existing WordPress accounts. It does not include file uploads, payments, automatic invitations or reminder emails. There is no paid tier, SaaS account or license key; all shipped features are GPL-2.0-or-later.
+
 ## Data ownership and maintenance
 
 Data stays in two plugin-owned database tables. No telemetry or remote requests are made. Site administrators should set a retention practice suitable for the work they collect; there is no automatic purge of active briefs.
@@ -75,4 +93,4 @@ Run tests only on a disposable installation with `MFS_TESTS=true`:
 wp eval-file /path/to/client-brief-desk/tests/integration.php
 ```
 
-Built by [Rohan Salave](https://www.linkedin.com/in/rohan-salave-362475189/) · [More WordPress work](https://github.com/memberfixstudio-ind).
+Built by [Rohan Salave](https://www.linkedin.com/in/rohan-salave-362475189/) at [MemberFix Studio](https://memberfix.studio/) · [More WordPress work](https://github.com/memberfixstudio-ind).
